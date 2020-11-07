@@ -27,6 +27,14 @@ def add_s_to_df(d, l, name, index):
     d.insert(index, name, l)
 
 
+def parse_workrate(s):
+    defense = s.str.findall(r'/([A-z]+)$')
+    defense.update(defense.apply(s_from_one_elem_l))
+    s.update(s.str.findall(r'([A-z]+)/'))
+    s.update(s.apply(s_from_one_elem_l))
+    return defense
+
+
 def parse_rating_position_s(s):
     r = s.str.findall(r'[0-9]+')
     r.update(r.apply(int_from_one_elem_l))
@@ -51,6 +59,14 @@ def replace_height_s(s):
 
 def height_int(s):
     return int(re.findall(r'\((\d+) cm\)', s)[0])
+
+
+def replace_weight_s(s):
+    s.update(s.apply(weight_int))
+
+
+def weight_int(s):
+    return int(re.findall(r'^[0-9]+', s)[0])
 
 
 def replace_foot_s(s):
@@ -129,23 +145,36 @@ fifa_data = fifa_data[
                                     'HANDLING', 'Handling', 'Special Trait', 'Swipe Skill Move', 'Tap Skill Move'],
                 fifa_data.columns))]
 
-print('Amount of rows was: ', fifa_data['ID'].count())
+print('Amount of rows with nan: ', fifa_data['ID'].count())
 fifa_data.dropna(inplace=True)
-print('Amount of rows now: ', fifa_data['ID'].count())
+print('Amount of rows without: ', fifa_data['ID'].count())
 
 replace_height_s(fifa_data['Height'])
 add_s_to_df(fifa_data, parse_rating_position_s(fifa_data['Position_Rating']), 'Rating', 5)
 rename_c(fifa_data, 'Position_Rating', 'Position')
+add_s_to_df(fifa_data, parse_workrate(fifa_data['Workrates (ATT/DEF)']), 'Work in DEF', 12)
+rename_c(fifa_data, 'Workrates (ATT/DEF)', 'Work in ATT')
 add_s_to_df(fifa_data, parse_league_s(fifa_data['League']), 'National team', 4)
 replace_foot_s(fifa_data['Foot'])
 replace_weak_f_s(fifa_data['Weak Foot'])
+replace_weight_s(fifa_data['Weight'])
+# print(fifa_data['Work in ATT'])
+# print(fifa_data['Work in DEF'])
+fifa_data[['Weight', 'Rating', 'Height', 'Weak Foot', 'PACE', 'Acceleration', 'Shot Power', 'Long Shot', 'Volleys',
+           'Penalties', 'PASSING', 'Vision', 'Free Kick', 'Short Passing', 'Long Passing', 'Agility', 'Balance',
+           'Ball Control', 'Dribbling', 'Interceptions', 'Heading', 'PHYSICAL', 'Jumping', 'Strength',
+           'Finishing']] = fifa_data[['Weight', 'Rating', 'Height', 'Weak Foot', 'PACE', 'Acceleration', 'Shot Power',
+                                      'Long Shot', 'Volleys', 'Penalties', 'PASSING', 'Vision', 'Free Kick',
+                                      'Short Passing', 'Long Passing', 'Agility', 'Balance', 'Ball Control',
+                                      'Dribbling', 'Interceptions', 'Heading', 'PHYSICAL', 'Jumping', 'Strength',
+                                      'Finishing']].astype(int)
 # print(fifa_data.dtypes)
 
 # for i in fifa_data.columns.values:
 #     fifa_data[i] = fifa_data[i].apply(safe_value)
 
 # to es
-# helpers.bulk(es_client, doc_generator(fifa_data))
+helpers.bulk(es_client, doc_generator(fifa_data))
 # print(es_client.get(index='fifaportal', id=21503589)['_source'])
 
 # какое количество левоногих в каждой лиге
