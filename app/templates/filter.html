@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="s013">
+      <form action="/result" method="POST">
+        <fieldset>
+          <legend>Find players</legend>
+        </fieldset>
+        <div class="inner-form">
+          <div class="left">
+            <div class="input-wrap first">
+              <div class="input-field first">
+                <label>Last Name</label>
+                <input type="text" name='lastname' placeholder="ex: Ronaldo, Messi" />
+              </div>
+            </div>
+             <div class="input-wrap second">
+              <div class="input-field second">
+                <label>First Name</label>
+                <input type="text" name='firstname' placeholder="ex: Cristiano, Lionel" />
+              </div>
+            </div>
+            <div class="input-wrap last">
+              <div class="input-field second">
+                <label>Amount</label>
+                <div class="input-select">
+                  <select data-trigger="" name="choices-single-defaul">
+                    <option placeholder="">5</option>
+                    <option>1</option>
+                    <option>10</option>
+                    <option>100</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="left">
+            <div class="input-wrap first">
+              <div class="input-field first">
+                <label>Nation</label>
+                <input type="text" name='nation' placeholder="ex: Portugal, Argentina" />
+              </div>
+            </div>
+            <div class="input-wrap second">
+              <div class="input-field second">
+                <label>Club</label>
+                <input type="text" name='club' placeholder="ex: Piemonte Calcio, FC Barcelona" />
+              </div>
+            </div>
+            <div class="input-wrap last">
+              <div class="input-field second">
+                <label>Foot</label>
+                <div class="input-select">
+                  <select data-trigger="" name="choices-single-defaul">
+                    <option placeholder="" name='foot' >right</option>
+                    <option>left</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="left">
+            <div class="input-wrap first">
+              <div class="input-field first">
+                <label>Height</label>
+                <input type="number" name='height'/>
+              </div>
+            </div>
+            <div class="input-wrap second">
+              <div class="input-field second">
+                <label>Weight</label>
+                <input type="number" name='weight'/>
+              </div>
+            </div>
+            <div class="input-wrap borderslikelast">
+              <div class="input-field borderslikelast">
+                <label>Rating</label>
+                <input type="number" name='rating'/>
+              </div>
+            </div>
+          </div>
+          <input class="btn-search" type="submit" value="SEARCH"></input>
+        </div>
+      </form>
+    </div>
+    <script src="../static/js/extention/choices.js"></script>
+    <script>
+      const choices = new Choices('[data-trigger]',
+      {
+        searchEnabled: false,
+        itemSelectText: '',
+      });
+    </script>
+{% endblock %}

@@ -10,4 +10,9 @@ print(es.sql.query(body={
     "query": "SELECT Name, Weight FROM fifaportal ORDER BY Weight DESC",
     "fetch_size": 1
 })['rows'])
+print(es.sql.query(body={
+    "query": "SELECT Position \
+              FROM fifaportal \
+              GROUP BY Position ",
+})['rows'])
 
