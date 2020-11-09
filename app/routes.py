@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-from flask import render_template, request, redirect, url_for,jsonify
+from flask import render_template, request, redirect, url_for, jsonify
 
 from app import app
+from utils import EsControler
+from utils import Const
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -27,15 +29,27 @@ def filter():
 @app.route('/result', methods=['POST'])
 def result():
     if request.method == 'POST':
-        result = (
-            request.form.get('firstname'),
-            request.form.get('lastname'),
-            request.form.get('nation'),
-            request.form.get('club'),
-            request.form.get('weight'),
-            request.form.get('height'),
-            request.form.get('rating'),
-            request.form.get('foot')
-        )
-        return render_template('result.html', result=result)
+        l = []
+        rf = request.form
+        couple_name_atr_val(Const.NAME, rf.get('firstname') + ' ' + rf.get('lastname'), l)
+        couple_name_atr_val(Const.NATION, rf.get('nation'), l)
+        couple_name_atr_val(Const.CLUB, rf.get('club'), l)
+        couple_name_atr_val(Const.WEIGHT, rf.get('weight'), l)
+        couple_name_atr_val(Const.HEIGHT, rf.get('height'), l)
+        couple_name_atr_val(Const.RATING, rf.get('rating'), l)
+        couple_name_atr_val(Const.FOOT, rf.get('foot'), l)
+        r_form = dict(l)
+        res = EsControler.search_player(r_form)
+        return render_template('result.html', result=res)
     return render_template('result.html')
+
+
+def __if_none__(r):
+    if r:
+        return 1
+    return 0
+
+
+def couple_name_atr_val(const, r, l):
+    if __if_none__(r):
+        l.append((const, r))
