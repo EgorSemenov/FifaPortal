@@ -132,7 +132,7 @@ def rename_c(df, o_c_name, n_c_name):
     df.update(df.rename(columns={o_c_name: n_c_name}, inplace=True))
 
 
-fifa_data = pd.read_csv('fifa_players_data.csv', engine='c')
+fifa_data = pd.read_csv('../data/fifa_players_data.csv', engine='c')
 # fifa_data = pd.read_csv('test.csv', engine='c')
 es_client = Elasticsearch(http_compress=True)
 
@@ -174,8 +174,10 @@ fifa_data[['Weight', 'Rating', 'Height', 'Weak Foot', 'PACE', 'Acceleration', 'S
 #     fifa_data[i] = fifa_data[i].apply(safe_value)
 
 # to es
+
 helpers.bulk(es_client, doc_generator(fifa_data))
-# print(es_client.get(index='fifaportal', id=21503589)['_source'])
+
+
 
 # какое количество левоногих в каждой лиге
 
