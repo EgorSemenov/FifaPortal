@@ -4,11 +4,12 @@ from decimal import Decimal, ROUND_HALF_UP
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
-
 # def parse_league_field(league_str):
 #     l = league_str.split(',')
 #     l = [x.lstrip() for x in l]
 #     return l
+from utils.Const import FIFALABEL
+
 
 def parse_league_s(l):
     l.update(l.str.split(','))
@@ -135,6 +136,50 @@ def rename_c(df, o_c_name, n_c_name):
 fifa_data_set = pd.read_csv('../data/fifa_players_data.csv', engine='c', chunksize=1000)
 # fifa_data = pd.read_csv('test.csv', engine='c')
 es_client = Elasticsearch(http_compress=True)
+es_client.indices.delete(index=FIFALABEL)
+
+int_key_fields = ['Weight', 'Rating', 'Height']  # add more in future
+int_fields = ['Weak Foot', 'PACE', 'Acceleration',
+              'Shot Power', 'Long Shot', 'Volleys', 'Penalties', 'PASSING', 'Vision',
+              'Free Kick', 'Short Passing', 'Long Passing', 'Agility', 'Balance',
+              'Ball Control', 'Dribbling', 'Interceptions', 'Heading', 'PHYSICAL',
+              'Jumping', 'Strength', 'Finishing']
+
+es_client.indices.create(index=FIFALABEL)
+mapping_for_prop = {}
+mapping_int_key_prop = {
+    x: {
+        "type": "short",
+        "coerce": 'false',
+        # "ignore_malformed": 'true',
+        "fields": {
+            "keyword": {
+                "type": "keyword",
+                "norms": 'true'
+            }
+        }
+    } for x in int_key_fields
+}
+
+mapping_int_prop = {
+    x: {
+        "type": "short",
+        "coerce": 'false',
+        # "ignore_malformed": 'true',
+    }
+    for x in int_fields
+}
+
+mapping_for_prop.update(**mapping_int_key_prop, **mapping_int_prop)
+
+es_client.indices.put_mapping(
+    index=FIFALABEL,
+    body={
+        "properties":
+            mapping_for_prop
+    }
+)
+
 for fifa_data in fifa_data_set:
     # delete useless columns
     fifa_data = fifa_data[
@@ -145,9 +190,9 @@ for fifa_data in fifa_data_set:
                                         'HANDLING', 'Handling', 'Special Trait', 'Swipe Skill Move', 'Tap Skill Move'],
                     fifa_data.columns))]
 
-    print('Amount of rows with nan: ', fifa_data['ID'].count())
+    # print('Amount of rows with rows with nan: ', fifa_data['ID'].count())
     fifa_data.dropna(inplace=True)
-    print('Amount of rows without: ', fifa_data['ID'].count())
+    print('Amount of rows to import from current chunk: ', fifa_data['ID'].count())
 
     replace_height_s(fifa_data['Height'])
     add_s_to_df(fifa_data, parse_rating_position_s(fifa_data['Position_Rating']), 'Rating', 5)
@@ -160,14 +205,9 @@ for fifa_data in fifa_data_set:
     replace_weight_s(fifa_data['Weight'])
     # print(fifa_data['Work in ATT'])
     # print(fifa_data['Work in DEF'])
-    fifa_data[['Weight', 'Rating', 'Height', 'Weak Foot', 'PACE', 'Acceleration', 'Shot Power', 'Long Shot', 'Volleys',
-               'Penalties', 'PASSING', 'Vision', 'Free Kick', 'Short Passing', 'Long Passing', 'Agility', 'Balance',
-               'Ball Control', 'Dribbling', 'Interceptions', 'Heading', 'PHYSICAL', 'Jumping', 'Strength',
-               'Finishing']] = fifa_data[['Weight', 'Rating', 'Height', 'Weak Foot', 'PACE', 'Acceleration', 'Shot Power',
-                                          'Long Shot', 'Volleys', 'Penalties', 'PASSING', 'Vision', 'Free Kick',
-                                          'Short Passing', 'Long Passing', 'Agility', 'Balance', 'Ball Control',
-                                          'Dribbling', 'Interceptions', 'Heading', 'PHYSICAL', 'Jumping', 'Strength',
-                                          'Finishing']].astype(int)
+
+    fifa_data[int_fields + int_key_fields] = fifa_data[int_fields + int_key_fields].astype(int)
+
     # print(fifa_data.dtypes)
 
     # for i in fifa_data.columns.values:
@@ -177,20 +217,18 @@ for fifa_data in fifa_data_set:
 
     helpers.bulk(es_client, doc_generator(fifa_data))
 
+# какое количество левоногих в каждой лиге
 
-
-    # какое количество левоногих в каждой лиге
-
-    # amount of left-foot players in each league
-    # df_eng_pr_l = get_filtered(fifa_da иta, ['League'], [['England Premier League']])
-    # print('Процент левшей в Английской Премьер Лиге:', Decimal(count_l_foot(df_eng_pr_l['Foot']) /
-    #                                                       df_eng_pr_l['Foot'].count() * 100).quantize(Decimal('0.01'),
-    #                                                                                                        rounding=
-    #                                                                                                    ROUND_HALF_UP))
-    # # amount of each nationality in each league
-    # print('Процент французов в Английской Премьер Лиге:', Decimal(get_filtered(df_eng_pr_l, ['Nation'],
-    #                                                                            [['France']])['Nation'].count() /
-    #                                                               df_eng_pr_l['Nation'].count() * 100).quantize(
-    #                                                                                                     Decimal('0.01'),
-    #                                                                                                     rounding=
-    #                                                                                                     ROUND_HALF_UP))
+# amount of left-foot players in each league
+# df_eng_pr_l = get_filtered(fifa_da иta, ['League'], [['England Premier League']])
+# print('Процент левшей в Английской Премьер Лиге:', Decimal(count_l_foot(df_eng_pr_l['Foot']) /
+#                                                       df_eng_pr_l['Foot'].count() * 100).quantize(Decimal('0.01'),
+#                                                                                                        rounding=
+#                                                                                                    ROUND_HALF_UP))
+# # amount of each nationality in each league
+# print('Процент французов в Английской Премьер Лиге:', Decimal(get_filtered(df_eng_pr_l, ['Nation'],
+#                                                                            [['France']])['Nation'].count() /
+#                                                               df_eng_pr_l['Nation'].count() * 100).quantize(
+#                                                                                                     Decimal('0.01'),
+#                                                                                                     rounding=
+#                                                                                                     ROUND_HALF_UP))
