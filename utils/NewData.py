@@ -136,7 +136,7 @@ def rename_c(df, o_c_name, n_c_name):
 fifa_data_set = pd.read_csv('../data/fifa_players_data.csv', engine='c', chunksize=1000)
 # fifa_data = pd.read_csv('test.csv', engine='c')
 es_client = Elasticsearch(http_compress=True)
-# es_client.indices.delete(index=FIFALABEL)
+es_client.indices.delete(index=FIFALABEL)
 
 fifa_ind_body = {
     "settings": {
