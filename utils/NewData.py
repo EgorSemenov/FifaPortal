@@ -136,7 +136,66 @@ def rename_c(df, o_c_name, n_c_name):
 fifa_data_set = pd.read_csv('../data/fifa_players_data.csv', engine='c', chunksize=1000)
 # fifa_data = pd.read_csv('test.csv', engine='c')
 es_client = Elasticsearch(http_compress=True)
-es_client.indices.delete(index=FIFALABEL)
+# es_client.indices.delete(index=FIFALABEL)
+
+fifa_ind_body = {
+    "settings": {
+        "analysis": {
+            # put char_filter here if need
+            "tokenizer": "standard",
+            "filter": {
+                "stopwords_removal": {
+                    "type": "stop",
+                    "stopwords": [
+                        "_brazilian_",
+                        "_english_",
+                        "_german_",
+                        "_portuguese_",
+                        "_spanish_",
+                        "_turkish_"
+                    ]
+                }
+            },
+            "analyzer": {
+                "custom_analyzer_for_key_text_fields": {
+                    "type": "custom",
+                    "tokenizer": "whitespace",
+                    "filter": [
+                        "lowercase",
+                        "asciifolding",
+                        "stopwords_removal"
+                    ]
+                },
+                "custom_analyzer_for_nations_fields": {
+                    "type": "custom",
+                    "tokenizer": "whitespace",
+                    "filter": [
+                        "lowercase",
+                        "asciifolding",
+                        "stemmer",
+                        "stop"
+                    ]
+                }
+            },
+            "normalizer": {
+                "key_normalizer": {
+                    "type": "custom",
+                    "char_filter":
+                        {
+                            "type": "mapping",
+                            "mappings": [
+                                "left => l",
+                                "right => r"
+                            ]
+                        }
+                    ,
+                    "filter": ["lowercase"]
+                }
+            }
+        }
+    },
+}
+es_client.indices.create(index=FIFALABEL, body=fifa_ind_body)
 
 int_key_fields = ['Weight', 'Rating', 'Height']  # add more in future
 int_fields = ['Weak Foot', 'PACE', 'Acceleration',
@@ -145,8 +204,54 @@ int_fields = ['Weak Foot', 'PACE', 'Acceleration',
               'Ball Control', 'Dribbling', 'Interceptions', 'Heading', 'PHYSICAL',
               'Jumping', 'Strength', 'Finishing']
 
-es_client.indices.create(index=FIFALABEL)
-mapping_for_prop = {}
+key_fields = ['ID', 'Position', 'Foot', 'Work in ATT', 'Work in DEF']
+
+key_unsearchable_fields = ['Celebration', 'URL', 'Image_URL']
+
+key_text_fields_not_nation = ['Name', 'Club', 'League']
+
+key_text_fields_nation = ['Nation', 'National team']
+
+mapping_key_prop = {
+    x: {
+        "type": "keyword",
+        "normalizer": "key_normalizer"
+    } for x in key_fields
+}
+
+mapping_key_unsearchable_prop = {
+    x: {
+        "type": "keyword",
+        "index": "false"
+    } for x in key_unsearchable_fields
+}
+
+mapping_key_text_prop_not_nation = {
+    x: {
+        "type": "text",
+        "analyzer": "custom_analyzer_for_key_text_fields",
+        "norms": "false",  # for optimization and connected with project specific
+        "fields": {
+            "keyword": {
+                "type": "keyword"
+            }
+        }
+    } for x in key_text_fields_not_nation
+}
+
+mapping_key_text_prop_nation = {
+    x: {
+        "type": "text",
+        "analyzer": "custom_analyzer_for_nations_fields",
+        "norms": "false",  # for optimization and connected with project specific
+        "fields": {
+            "keyword": {
+                "type": "keyword"
+            }
+        }
+    } for x in key_text_fields_nation
+}
+
 mapping_int_key_prop = {
     x: {
         "type": "short",
@@ -154,8 +259,7 @@ mapping_int_key_prop = {
         # "ignore_malformed": 'true',
         "fields": {
             "keyword": {
-                "type": "keyword",
-                "norms": 'true'
+                "type": "keyword"
             }
         }
     } for x in int_key_fields
@@ -164,13 +268,16 @@ mapping_int_key_prop = {
 mapping_int_prop = {
     x: {
         "type": "short",
-        "coerce": 'false',
-        # "ignore_malformed": 'true',
+        "coerce": 'false',  # Try to convert strings to numbers and truncate fractions for integers. Accepts true (
+        # default) and false. Not applicable for unsigned_long. "ignore_malformed": 'true',
     }
     for x in int_fields
 }
 
-mapping_for_prop.update(**mapping_int_key_prop, **mapping_int_prop)
+mapping_for_prop = {}
+mapping_for_prop.update(**mapping_int_key_prop, **mapping_int_prop, **mapping_key_prop,
+                        **mapping_key_text_prop_not_nation, **mapping_key_text_prop_nation,
+                        **mapping_key_unsearchable_prop)
 
 es_client.indices.put_mapping(
     index=FIFALABEL,
