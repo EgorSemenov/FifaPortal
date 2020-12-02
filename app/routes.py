@@ -40,6 +40,7 @@ def result():
         couple_name_atr_val(Const.FOOT, rf.get('foot'), l)
         r_form = dict(l)
         res = EsControler.search_player(r_form)
+        res = [x['_source'] for x in res['hits']['hits']]
         return render_template('result.html', result=res)
     return render_template('result.html')
 
