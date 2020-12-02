@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
- <div class="s013">
- {{result}}
+<div class="players-background">
+{% for player in result %}
+ <div class="players">
+  <img src={{player['Image_URL']}} alt="photo of player">
+  {{player['Name']}},
+  {{player['Rating']}}
+
+ </div>
+{% endfor %}
  </div>
 {% endblock %}

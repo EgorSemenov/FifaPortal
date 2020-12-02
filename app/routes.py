@@ -40,16 +40,17 @@ def result():
         couple_name_atr_val(Const.FOOT, rf.get('foot'), l)
         r_form = dict(l)
         res = EsControler.search_player(r_form)
+        res = [x['_source'] for x in res['hits']['hits']]
         return render_template('result.html', result=res)
     return render_template('result.html')
 
 
-def __if_none__(r):
+def __if_not_none__(r):
     if r:
         return 1
     return 0
 
 
 def couple_name_atr_val(const, r, l):
-    if __if_none__(r):
+    if __if_not_none__(r):
         l.append((const, r))
