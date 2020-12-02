@@ -7,22 +7,49 @@ from utils import Const
 
 
 def search_player(r):
-    # request_filter = [r['Name'], r['Nation']]
-    print(r.keys())
-    request_filter = [{x: r[x]} for x in ('Name', 'Nation') if x in r.keys()]
-    request_should = [{x: r[x]} for x in ('Club', 'Height', 'Weight', 'Rating', 'Foot') if x in r.keys()]
-    request_filter = [{"match": x} for x in request_filter]
-    request_should = [{"match": x} for x in request_should]
+
+    request_filter_not_nation = [(x, r[x]) for x in ('Name',) if x in r.keys()]
+    request_filter_nation = [(x, r[x]) for x in ('Nation',) if x in r.keys()]
+
+    request_should = [(x, r[x]) for x in ('Club',) if x in r.keys()]
+    request_should_range = [(x, r[x] + 5, r[x] - 5) for x in ('Height', 'Weight', 'Rating',) if x in r.keys()]
+    request_should_term = [(x, r[x]) for x in ('Foot', ) if x in r.keys()]
+
+    request_filter_not_nation = [{"match": {
+                            x[0]: {
+                                "query": x[1],
+                                "fuzziness": "AUTO:5,10",
+                                "analyzer": "custom_analyzer_for_key_text_fields"}}} for x in request_filter_not_nation]
+    request_filter_nation = [{"match": {
+        x[0]: {
+            "query": x[1],
+            "fuzziness": "AUTO",
+            "analyzer": "custom_analyzer_for_nations_fields"}}} for x in request_filter_nation]
+
+    request_should = [{"match": {
+        x[0]: {
+            "query": x[1],
+            "fuzziness": "AUTO",
+            "analyzer": "custom_analyzer_for_key_text_fields"}}} for x in request_should]
+    request_should_range = [{"range": {
+        x[0]: {
+            "gte": r[x] - 5,
+            "lte": r[x] + 5
+            }}} for x in request_should_range]
+    request_should_term = [{"match": {
+        x[0]: {
+            "query": x[1],
+            "normalizer": "key_normalizer"}}} for x in request_should_term]
+
     q = {
         "query": {
             "bool": {
-                "filter": request_filter,
-                "should": request_should
+                "filter": request_filter_not_nation + request_filter_nation,
+                "should": request_should + request_should_range + request_should_term
             }
         }
     }
-    print(request_filter)
-    print(request_should)
+
     return es.search(index=Const.FIFALABEL, body=q)
 
 
