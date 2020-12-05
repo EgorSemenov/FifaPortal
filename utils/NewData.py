@@ -154,11 +154,11 @@ fifa_ind_body = {
                         "_spanish_",
                         "_turkish_"
                     ]
-                },
-                "hunspell_": {
-                            "type": "hunspell",
-                            "locale": "en_US"
-                        },
+                }
+                # "hunspell_": {
+                #             "type": "hunspell",
+                #             "locale": "en_US"
+                #         },
             },
             "analyzer": {
                 "custom_analyzer_for_key_text_fields": {
