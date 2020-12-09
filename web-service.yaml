@@ -9,11 +9,11 @@ metadata:
     io.kompose.service: web
   name: web
 spec:
+  type: NodePort
   ports:
   - name: "5000"
     port: 5000
     targetPort: 5000
+    nodePort: 30007
   selector:
     io.kompose.service: web
-status:
-  loadBalancer: {}

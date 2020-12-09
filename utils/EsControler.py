@@ -9,10 +9,10 @@ from utils import Const
 def search_player(r):
 
     request_filter_not_nation = [(x, r[x]) for x in ('Name',) if x in r.keys()]
-    request_filter_nation = [(x, r[x]) for x in ('Nation',) if x in r.keys()]
+    request_must_nation = [(x, r[x]) for x in ('Nation',) if x in r.keys()]
 
-    request_should = [(x, r[x]) for x in ('Club',) if x in r.keys()]
-    request_should_range = [(x, r[x] + 5, r[x] - 5) for x in ('Height', 'Weight', 'Rating',) if x in r.keys()]
+    request_must = [(x, r[x]) for x in ('Club',) if x in r.keys()]
+    request_should_range = [(x, int(r[x]) + 5, int(r[x]) - 5) for x in ('Height', 'Weight', 'Rating',) if x in r.keys()]
     request_should_term = [(x, r[x]) for x in ('Foot', ) if x in r.keys()]
 
     request_filter_not_nation = [{"match": {
@@ -20,21 +20,21 @@ def search_player(r):
                                 "query": x[1],
                                 "fuzziness": "AUTO:5,10",
                                 "analyzer": "custom_analyzer_for_key_text_fields"}}} for x in request_filter_not_nation]
-    request_filter_nation = [{"match": {
+    request_must_nation = [{"match": {
         x[0]: {
             "query": x[1],
             "fuzziness": "AUTO",
-            "analyzer": "custom_analyzer_for_nations_fields"}}} for x in request_filter_nation]
+            "analyzer": "custom_analyzer_for_nations_fields"}}} for x in request_must_nation]
 
-    request_should = [{"match": {
+    request_must = [{"match": {
         x[0]: {
             "query": x[1],
             "fuzziness": "AUTO",
-            "analyzer": "custom_analyzer_for_key_text_fields"}}} for x in request_should]
+            "analyzer": "custom_analyzer_for_key_text_fields"}}} for x in request_must]
     request_should_range = [{"range": {
         x[0]: {
-            "gte": r[x] - 5,
-            "lte": r[x] + 5
+            "gte": x[2],
+            "lte": x[1]
             }}} for x in request_should_range]
     request_should_term = [{"match": {
         x[0]: {
@@ -44,8 +44,9 @@ def search_player(r):
     q = {
         "query": {
             "bool": {
-                "filter": request_filter_not_nation + request_filter_nation,
-                "should": request_should + request_should_range + request_should_term
+                "filter": request_filter_not_nation,
+                "must": request_must + request_must_nation,
+                "should": request_should_range + request_should_term
             }
         }
     }
