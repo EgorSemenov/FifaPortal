@@ -97,7 +97,7 @@ def get_filtered(df, fields, filters):
     :param filters: matrix: in each rows there are possible values for fields
     :return: suitable rows of df
     """
-    map = []  # реализовал через маску из True False, если это плохо сообщите пожалуйста
+    map = []  
     for i in df[fields].iterrows():
         row = []
         for index, j in enumerate(filters):
